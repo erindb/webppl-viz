@@ -47,11 +47,48 @@ var pdf = function(data, container_selector, container_width, container_height) 
 		return x;
 	}
 
-	var draw_histogram = function(chart, data, x, width, height) {
+	var make_y_scale = function(chart, height, highest_probability) {
+		var y = d3.scale.linear()
+			.range([height, 0]);
+		var yAxis = d3.svg.axis()
+			.scale(y)
+			.orient("left");
+		y.domain([0, highest_probability]);
+		var y_axis_drawn = chart.append("g")
+			.attr("class", "y axis")
+			.call(yAxis);
+		return y;
+	}
 
-		var probabilities = data.map(function(x) {return x.probability;});
-		var highest_probability = d3.max(probabilities);
+	var draw_histogram = function(chart, hist_data, x, y, width, height, n_bins) {
+		chart.selectAll(".bar")
+			.data(hist_data)
+			.enter().append("rect")
+			.attr("class", "bar")
+			.attr("x", function(d) { return x(d.value); })
+			.attr("y", function(d) { return y(d.probability); })
+			.attr("height", function(d) { return height - y(d.probability); })
+			.attr("width", width/n_bins);
+	}
 
+	var draw_hist = true;
+	var draw_density = true;
+
+	// overall chart properties, for fitting plot within container
+	var margin = {top: 20, right: 30, bottom: 30, left: 40};
+	var width = container_width - margin.left - margin.right;
+	var height = container_height - margin.top - margin.bottom;
+
+	// initialize empty chart
+	var chart = make_chart(container_selector, margin, width, height);
+
+	// extract some useful properties of the data
+	var values = data.map(function(x) {return x.value;});
+	var lowest = d3.min(values);
+	var highest = d3.max(values);
+	var probabilities = data.map(function(x) {return x.probability;});
+	var highest_probability = d3.max(probabilities);
+	if (draw_hist) {
 		// histogram requires binned data
 		var n_bins = 20;
 		var bin_width = (highest - lowest)/n_bins;
@@ -75,105 +112,23 @@ var pdf = function(data, container_selector, container_width, container_height) 
 				probability: total_probability
 			})
 		}
-
-		var y = d3.scale.linear()
-			.range([height, 0]);
-		y.domain([0, highest_probability]);
-
-		chart.selectAll(".bar")
-			.data(hist_data)
-			.enter().append("rect")
-			.attr("class", "bar")
-			.attr("x", function(d) { return x(d.value); })
-			.attr("y", function(d) { return y(d.probability); })
-			.attr("height", function(d) { return height - y(d.probability); })
-			.attr("width", width/n_bins);
 	}
-
-	var draw_density_plot = function(chart, height, data, x) {	
-		var densify_data = function(data) {
-			var values = data.map(function(x) {return x.value;});
-			var lowest = d3.min(values);
-			var highest = d3.max(values);
-
-			// do kernel density estimate
-			// highest_probability = ...
-			var density_data = [];
-
-			function epanechnikovKernel(u) {
-				return Math.abs(u) <= 1 ? .75 * (1 - u * u) : 0;
-			}
-
-			// get optimal bandwidth
-			// HT http://en.wikipedia.org/wiki/Kernel_density_estimation#Practical_estimation_of_the_bandwidth
-			// var mean = erp.expectation();
-			var n = data.length; // this is too low
-			var mean = data.reduce(function(acc, x) {
-				return acc + (x.probability * x.value);
-			}, 0);
-			var sd = Math.sqrt(data.reduce(function(acc, x) {
-				return acc + (x.probability * Math.pow(x.value - mean, 2));
-			}, 0));
-
-			var bandwidth = 1.06 * sd * Math.pow(n, -0.2);
-
-			var numBins = (highest - lowest) / bandwidth;
-
-			for (var i = 0; i <= numBins; i++) {
-				var x = lowest + bandwidth * i;
-				var kernel_sum = 0;
-				for (var j = 0; j < data.length; j++) {
-					var datum = data[j];
-					kernel_sum += epanechnikovKernel((x - datum.value) / bandwidth) * datum.probability;
-				}
-				density_data.push({
-					value: x,
-					probability: kernel_sum / (n * bandwidth)
-					});
-			}
-			return density_data;
-		}
-		var density_data = densify_data(data);
-		var y_density = d3.scale.linear()
-			.range([height, 0]);
-		y_density.domain([0, d3.max(density_data.map(function(x) {return x.probability;}))]);
-		var line = d3.svg.line()
-		    .x(function(d) { return x(d.value); })
-		    .y(function(d) { return y_density(d.probability); });
-		chart.append("path")
-	    	.datum(density_data)
-	    	.attr("class", "line")
-			.attr("d", line);
+	if (draw_density) {
+		// do kernel density estimate
 	}
-
-	var draw_hist = true;
-	var draw_density = true;
-
-	// overall chart properties, for fitting plot within container
-	var margin = {top: 20, right: 30, bottom: 30, left: 40};
-	var width = container_width - margin.left - margin.right;
-	var height = container_height - margin.top - margin.bottom;
-
-	// initialize empty chart
-	var chart = make_chart(container_selector, margin, width, height);
-
-	// extract some useful properties of the data
-	var values = data.map(function(x) {return x.value;});
-	var lowest = d3.min(values);
-	var highest = d3.max(values);
 
 	// x-axis should be continuous, because actual data
 	// domain is continuous.
 	var x = make_x_scale(chart, width, height, lowest, highest);
 
+	// y-axis should be as tall as necessary for density
+	// *and/or* hist plots
+	var y = make_y_scale(chart, height, highest_probability)
+
 	// make histogram bars
 	if (draw_hist) {
-		draw_histogram(chart, data, x, width, height);
+		draw_histogram(chart, hist_data, x, y, width, height, n_bins);
 	}
-	if (draw_density) {
-		draw_density_plot(chart, height, data, x)
-	}
-
 }
 
 $(document).ready(function() {
