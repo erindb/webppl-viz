@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<meta charset="utf-8">
 	<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script src="http://d3js.org/d3.v3.js"></script>
 	<script src="test.js"></script>
@@ -20,15 +21,16 @@
 			shape-rendering: crispEdges;
 		}
 
-		.x.axis path {
-			display: none;
+		.line {
+			fill: none;
+			stroke: steelblue;
+			stroke-width: 1.5px;
 		}
 	</style>
 </head>
 <body>
 	<!-- <div class="graph_container"></div> -->
-	<svg class="demo_pdf"></svg>
-	<svg class="chart"></svg>
+	<svg id="pdf_demo"></svg>
 </body>
 
 <!-- prgmr for hosting -->
