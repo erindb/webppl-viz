@@ -1,0 +1,23 @@
+{
+  "name": "webppl-viz",
+  "version": "0.0.1",
+  "description": "WebPPL library for visualizing ERPs",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/erindb/webppl-viz.git"
+  },
+  "author": "Erin Bennett",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/erindb/webppl-viz/issues"
+  },
+  "webppl": {
+    "headers": ["src/header.js"],
+    "wppl": ["src/viz.wppl"]
+  },
+  "homepage": "https://github.com/erindb/webppl-viz"
+}
