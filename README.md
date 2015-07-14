@@ -10,4 +10,4 @@ browserify -t [./src/bundle.js --require ../webppl-viz] -t brfs src/browser.js >
 uglifyjs webppl.js > webppl.min.js
 ~~~
 
-See `index.html` for examples.
+See [index.html](http://web.stanford.edu/~erindb/webppl-viz/) for examples.
