@@ -151,6 +151,11 @@ module.exports = function(env){
       .attr("y", function(d) { return y(d.probability); })
       .attr("height", function(d) { return height - y(d.probability); })
       .attr("width", width/n_bins);
+    // chart.append("text")
+    //     .attr("x", width / 2)
+    //     .attr("y", 0)
+    //     //.attr("dy", ".75em")
+        // .text(function(d) { return category; });
   }
 
   var heat_map = function(cat1_values, cat2_values, probabilities, container_selector, container_width, container_height, category1, category2) {
@@ -313,6 +318,13 @@ module.exports = function(env){
     var y_axis_drawn = chart.append("g")
       .attr("class", "y axis")
       .call(yAxis);
+    y_axis_drawn.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("x", -height/2)
+      .attr("dy", "-4em")
+      .style("text-anchor", "end")
+      .text(category);
 
 
     // bar.append("rect")
