@@ -439,9 +439,13 @@ module.exports = function(env){
                     var relevant_data = _.filter(category_data, function(datum) {
                       return datum[category1] == cat1val & datum[category2] == cat2val;
                     });
-                    return (_.map(relevant_data, function(datum) { return datum.probability; })).reduce(function(a, b) {
-                      return a + b;
-                    });
+                    if (relevant_data.length > 0) {
+                      return (_.map(relevant_data, function(datum) { return datum.probability; })).reduce(function(a, b) {
+                        return a + b;
+                      });
+                    } else {
+                      return 0;
+                    }
                   });
                 }));
                 var category1values_aligned_with_probs = _.flatten(_.map(category1values, function(cat1val) {
