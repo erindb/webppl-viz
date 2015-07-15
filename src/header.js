@@ -216,7 +216,7 @@ module.exports = function(env){
       var color_scale = function(prob) {return "steelblue"};
     } else {
       var color_scale = d3.scale.linear()
-        .domain([minprob, maxprob])
+        .domain([0, maxprob])
         .range(["white", "steelblue"]);
     }
 
