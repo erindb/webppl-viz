@@ -72,7 +72,7 @@ module.exports = function(env){
       .attr("x", -height/2)
       .attr("dy", "-4em")
       .style("text-anchor", "end")
-      .text(params.abel);
+      .text(params.label);
     return y;
   }
 
@@ -156,8 +156,8 @@ module.exports = function(env){
       })
     }
 
-    var x = make_x_scale(chart, width, height, "linear", {"lowest": lowest, "highest": highest, "category": category});
-    var y = make_y_scale(chart, width, height, "linear", {"lowest": 0, "highest": highest_probability, "category": ""});
+    var x = make_x_scale(chart, width, height, "linear", {"lowest": lowest, "highest": highest, "label": category});
+    var y = make_y_scale(chart, width, height, "linear", {"lowest": 0, "highest": highest_probability, "label": ""});
 
     // make histogram bars
     chart.selectAll(".bar")
@@ -338,11 +338,17 @@ module.exports = function(env){
     }
   }
 
-  function isErpObject(x) {
+  function isNumericErpObject(x) {
     var keys = Object.keys(x);
     for (var i=0; i<keys.length; i++) {
       var key = keys[i];
-      if (!isErpWithSupport(x[key])) {
+      var erp = x[key]
+      if (isErpWithSupport(erp)) {
+        var labels = erp.support();
+        if (!isNumeric(labels)) {
+          return false;
+        };
+      } else {
         return false;
       }
     }
@@ -439,8 +445,6 @@ module.exports = function(env){
   function vizPrint(store, k, a, x){
     var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
     resultDiv.show();
-    // console.log(x);
-    // if we can plot things, plot things
     if (isErpWithSupport(x)){
       // console.log("isErpWithSupport");
       var params = Array.prototype.slice.call(arguments, 2);
@@ -461,8 +465,22 @@ module.exports = function(env){
         // console.log("is not NiceObject");
         var result_div = d3.select(resultDivSelector);
         var plot_div = result_div.append("svg")
-        .attr("class", "single_variable_plot");
+          .attr("class", "single_variable_plot");
         plotSingleVariable(labels, counts, resultDivSelector + " .single_variable_plot", graph_width, graph_height, "")
+      }
+    } else if (isNumericErpObject(x)) {
+      var keys = Object.keys(x);
+      for (var i=0; i<keys.length; i++) {
+        var key = keys[i];
+        var erp = x[key]
+        var labels = erp.support();
+        var scores = _.map(labels, function(label){return erp.score([], label);});
+        var counts = scores.map(Math.exp);
+        var resultDivSelector = "#" + resultDiv.attr('id');
+        var result_div = d3.select(resultDivSelector);
+        var plot_div = result_div.append("svg")
+          .attr("id", "single_plot_" + key);
+        plotSingleVariable(labels, counts, resultDivSelector + " #single_plot_" + key, graph_width/2, graph_height/2, key);
       }
     } else {
       // console.log("is not ErpWithSupport");
