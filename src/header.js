@@ -138,14 +138,13 @@ module.exports = function(env){
     var bin_width = (highest - lowest)/n_bins;
     var hist_data = [];
     for (var i=0; i<n_bins; i++) {
-      var total_probability = data.reduce(function(prev,current) {
-        if (current.value >= i*bin_width+lowest &
-          (current.value < (i+1)*bin_width+lowest |
-            (current.value == highest & i == n_bins - 1))) {
-          return  +(current.probability) + prev;
-        }
-        return +prev;
-      }, 0);
+      var total_probability = data.reduce(
+        function(prev,current) {
+          if ( current.value >= i*bin_width+lowest & (current.value < (i+1)*bin_width+lowest | (current.value == highest & i == n_bins - 1))) {
+            return  +(current.probability) + prev;
+          }
+          return +prev;
+        }, 0);
       if (total_probability > highest_probability) {
         // one of the histogram probabilities might
         // be the highest y value.
@@ -339,6 +338,17 @@ module.exports = function(env){
     }
   }
 
+  function isErpObject(x) {
+    var keys = Object.keys(x);
+    for (var i=0; i<keys.length; i++) {
+      var key = keys[i];
+      if (!isErpWithSupport(x[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function plotSingleVariable(values, probabilities, container_selector, container_width, container_height, category) {
     if (isNumeric(values)) {
       // console.log("isNumeric");
@@ -346,6 +356,83 @@ module.exports = function(env){
     } else {
       // console.log("is not Numeric");
       discrete_probability_distribution(values, probabilities, container_selector, container_width, container_height, category);
+    }
+  }
+
+  function plotTwoVariables(values1, values2, probabilities, container_selector, category1, category2) {
+    if (isNumeric(values1) & isNumeric(values2)) {
+      scatter(values1, values2, probabilities, container_selector, graph_width/2, graph_height/2, category1, category2);
+    } else if (!isNumeric(values1) & !isNumeric(values2)) {
+      // first, we marginalize to these 2 variables only
+      var category_data = make_2cat_data(values1, values2, probabilities, category1, category2);
+      var category1values = _.unique(values1);
+      var category2values = _.unique(values2);
+      var heatmap_probabilities = _.flatten(_.map(category1values, function(cat1val) {
+        return _.map(category2values, function(cat2val) {
+          var relevant_data = _.filter(category_data, function(datum) {
+            return datum[category1] == cat1val & datum[category2] == cat2val;
+          });
+          if (relevant_data.length > 0) {
+            return (_.map(relevant_data, function(datum) { return datum.probability; })).reduce(function(a, b) {
+              return a + b;
+            });
+          } else {
+            return 0;
+          }
+        });
+      }));
+      var category1values_aligned_with_probs = _.flatten(_.map(category1values, function(cat1val) {
+        return _.map(category2values, function(cat2val) {
+          return cat1val;
+        })
+      }));
+      var category2values_aligned_with_probs = _.flatten(_.map(category1values, function(cat1val) {
+        return _.map(category2values, function(cat2val) {
+          return cat2val;
+        })
+      }));
+      // console.log(heatmap_probabilities);
+      heat_map(category1values_aligned_with_probs, category2values_aligned_with_probs, heatmap_probabilities,
+        container_selector, graph_width/2, graph_height/2, category1, category2);
+    }
+  }
+
+  function plotMarginals(labels, counts, resultDivSelector) {
+    var categories = Object.keys(labels[0]);
+
+    var result_div = d3.select(resultDivSelector);
+
+    for (var i=0; i<categories.length; i++) {
+      //marginals
+      var category = categories[i];
+      var category_data = make_data(labels, counts);
+      var values = _.unique(_.map(category_data, function(datum) {return datum.value[category];}));
+      var probabilities = _.map(values, function(value) {
+        var relevant_data = _.filter(category_data, function(datum) {return datum.value[category] == value;});
+        return (_.map(relevant_data, function(datum) { return datum.probability; })).reduce(function(a, b) {
+          return a + b;
+        });
+      });
+      var marginal_plot_tag = "marginal_" + category;
+      var marginal_div = result_div.append("svg")
+        .attr("class", marginal_plot_tag);
+      plotSingleVariable(values, probabilities, resultDivSelector + " ." + marginal_plot_tag, graph_width/2, graph_height/2, category);
+
+    }
+    for (var i=0; i<categories.length; i++) {
+      for (var j=0;j<i; j++) {
+        if (i != j) {
+          var category1 = categories[i];
+          var category2 = categories[j];
+          var values1 = labels.map(function(x) {return x[category1];});
+          var values2 = labels.map(function(x) {return x[category2];});
+          var probabilities = counts;
+          var plot_tag = "pairplot_" + category1 + "_" + category2;
+          var plot_container = result_div.append("svg")
+            .attr("class", plot_tag);
+          plotTwoVariables(values1, values2, counts, resultDivSelector + " ." + plot_tag, category1, category2);
+        }
+      }
     }
   }
 
@@ -369,98 +456,20 @@ module.exports = function(env){
       // // what kind of plot should I show?
       if (isNiceObject(labels)) {
         // console.log("isNiceObject");
-        var categories = Object.keys(labels[0]);
-
-        var result_div = d3.select(resultDivSelector);
-
-        for (var i=0; i<categories.length; i++) {
-          //marginals
-          var category = categories[i];
-          var category_data = make_data(labels, counts);
-          var values = _.unique(_.map(category_data, function(datum) {return datum.value[category];}));
-          var probabilities = _.map(values, function(value) {
-            var relevant_data = _.filter(category_data, function(datum) {return datum.value[category] == value;});
-            return (_.map(relevant_data, function(datum) { return datum.probability; })).reduce(function(a, b) {
-              return a + b;
-            });
-          });
-          var marginal_plot_tag = "marginal_" + category;
-          var marginal_div = result_div.append("svg")
-            .attr("class", marginal_plot_tag);
-          plotSingleVariable(values, probabilities, resultDivSelector + " ." + marginal_plot_tag, graph_width/2, graph_height/2, category);
-
-        }
-        for (var i=0; i<categories.length; i++) {
-          for (var j=0;j<i; j++) {
-            if (i != j) {
-              var category1 = categories[i];
-              var category2 = categories[j];
-              var values1 = labels.map(function(x) {return x[category1];});
-              var values2 = labels.map(function(x) {return x[category2];});
-              var probabilities = counts;
-              // if both numeric, plot scatterplots
-              if (isNumeric(values1) & isNumeric(values2)) {
-                // first, make container
-                // var scattersplot = result_div.append("div")
-                //  .attr("class", "scatterplot_container");
-                // then, draw a scatterplot
-                // var plot_container = scattersplot.append("svg")
-                var plot_tag = "scatter_" + category1 + "_" + category2;
-                var plot_container = result_div.append("svg")
-                  .attr("class", plot_tag);
-                scatter(values1, values2, probabilities, resultDivSelector + " ." + plot_tag, graph_width/2, graph_height/2, category1, category2);
-              } else if (!isNumeric(values1) & !isNumeric(values2)) {
-                // first, we marginalize to these 2 variables only
-                var category_data = make_2cat_data(values1, values2, counts, category1, category2);
-                var category1values = _.unique(values1);
-                var category2values = _.unique(values2);
-                var heatmap_probabilities = _.flatten(_.map(category1values, function(cat1val) {
-                  return _.map(category2values, function(cat2val) {
-                    var relevant_data = _.filter(category_data, function(datum) {
-                      return datum[category1] == cat1val & datum[category2] == cat2val;
-                    });
-                    if (relevant_data.length > 0) {
-                      return (_.map(relevant_data, function(datum) { return datum.probability; })).reduce(function(a, b) {
-                        return a + b;
-                      });
-                    } else {
-                      return 0;
-                    }
-                  });
-                }));
-                var category1values_aligned_with_probs = _.flatten(_.map(category1values, function(cat1val) {
-                  return _.map(category2values, function(cat2val) {
-                    return cat1val;
-                  })
-                }));
-                var category2values_aligned_with_probs = _.flatten(_.map(category1values, function(cat1val) {
-                  return _.map(category2values, function(cat2val) {
-                    return cat2val;
-                  })
-                }));
-                // console.log(heatmap_probabilities);
-                var plot_tag = "heat_map_" + category1 + "_" + category2;
-                var plot_container = result_div.append("svg")
-                  .attr("class", plot_tag);
-                heat_map(category1values_aligned_with_probs, category2values_aligned_with_probs, heatmap_probabilities,
-                  resultDivSelector + " ." + plot_tag, graph_width/2, graph_height/2, category1, category2);
-              }
-            }
-          }
-        }
+        plotMarginals(labels, counts, resultDivSelector);
       } else {
         // console.log("is not NiceObject");
         var result_div = d3.select(resultDivSelector);
         var plot_div = result_div.append("svg")
-          .attr("class", "single_variable_plot");
+        .attr("class", "single_variable_plot");
         plotSingleVariable(labels, counts, resultDivSelector + " .single_variable_plot", graph_width, graph_height, "")
       }
     } else {
       // console.log("is not ErpWithSupport");
       //otherwise, stringify and print
       resultDiv.append(
-      document.createTextNode(
-      JSON.stringify(x) + "\n"));
+        document.createTextNode(
+          JSON.stringify(x) + "\n"));
     }
     k(store);
   }
