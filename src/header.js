@@ -20,12 +20,15 @@ module.exports = function(env){
 
   var make_x_scale = function(chart, width, height, type, params) {
     // make scale
+    var ticks;
+    var x;
     if (type == "linear") {
-      var x = d3.scale.linear()
+      x = d3.scale.linear()
         .range([0, width])
         .domain([ params.lowest, params.highest ]);
+      ticks = 5;
     } else if (type == "ordinal") {
-      var x = d3.scale.ordinal()
+      x = d3.scale.ordinal()
         .domain(params.values)
         .rangeBands([0, width], 0.1);
     } else {
@@ -35,7 +38,8 @@ module.exports = function(env){
     // draw scale
     var x_axis = d3.svg.axis()
       .scale(x)
-      .orient("bottom");
+      .orient("bottom")
+      .ticks(ticks);
     var x_axis_drawn = chart.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
@@ -236,7 +240,7 @@ module.exports = function(env){
     // var cat2_values = data.map(function(x) {return x[category2];});
     var cat2_lowest = d3.min(cat2_values);
     var cat2_highest = d3.max(cat2_values);
-    var cat2_scale = make_y_scale(chart, width, height, "linear", {"lowest": cat2_lowest, "highest": cat2_highest, "category": category2});
+    var cat2_scale = make_y_scale(chart, width, height, "linear", {"lowest": cat2_lowest, "highest": cat2_highest, "label": category2});
 
     var probability_scale_factor = 1/d3.min(probabilities);
 
@@ -420,9 +424,10 @@ module.exports = function(env){
         });
       });
       var marginal_plot_tag = "marginal_" + category;
+      var plotid = "plot" + $(resultDivSelector).children().length;
       var marginal_div = result_div.append("svg")
-        .attr("class", marginal_plot_tag);
-      plotSingleVariable(values, probabilities, resultDivSelector + " ." + marginal_plot_tag, graph_width/2, graph_height/2, category);
+        .attr("id", plotid);
+      plotSingleVariable(values, probabilities, resultDivSelector + " #" + plotid, graph_width/2, graph_height/2, category);
 
     }
     for (var i=0; i<categories.length; i++) {
@@ -433,16 +438,16 @@ module.exports = function(env){
           var values1 = labels.map(function(x) {return x[category1];});
           var values2 = labels.map(function(x) {return x[category2];});
           var probabilities = counts;
-          var plot_tag = "pairplot_" + category1 + "_" + category2;
+          var plotid = "plot" + $(resultDivSelector).children().length;
           var plot_container = result_div.append("svg")
-            .attr("class", plot_tag);
-          plotTwoVariables(values1, values2, counts, resultDivSelector + " ." + plot_tag, category1, category2);
+            .attr("id", plotid);
+          plotTwoVariables(values1, values2, counts, resultDivSelector + " #" + plotid, category1, category2);
         }
       }
     }
   }
 
-  function vizPrint(store, k, a, x){
+  function jsVizPrint(x) {
     var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
     resultDiv.show();
     if (isErpWithSupport(x)){
@@ -464,9 +469,10 @@ module.exports = function(env){
       } else {
         // console.log("is not NiceObject");
         var result_div = d3.select(resultDivSelector);
+        var plotid = "plot" + resultDiv.children().length;
         var plot_div = result_div.append("svg")
-          .attr("class", "single_variable_plot");
-        plotSingleVariable(labels, counts, resultDivSelector + " .single_variable_plot", graph_width, graph_height, "")
+          .attr("id", plotid);
+        plotSingleVariable(labels, counts, resultDivSelector + " #" + plotid, graph_width, graph_height, "");
       }
     } else if (isNumericErpObject(x)) {
       var keys = Object.keys(x);
@@ -478,9 +484,10 @@ module.exports = function(env){
         var counts = scores.map(Math.exp);
         var resultDivSelector = "#" + resultDiv.attr('id');
         var result_div = d3.select(resultDivSelector);
+        var plotid = "plot" + resultDiv.children().length;
         var plot_div = result_div.append("svg")
-          .attr("id", "single_plot_" + key);
-        plotSingleVariable(labels, counts, resultDivSelector + " #single_plot_" + key, graph_width/2, graph_height/2, key);
+          .attr("id", plotid);
+        plotSingleVariable(labels, counts, resultDivSelector + " #" + plotid, graph_width/2, graph_height/2, key);
       }
     } else {
       // console.log("is not ErpWithSupport");
@@ -489,7 +496,11 @@ module.exports = function(env){
         document.createTextNode(
           JSON.stringify(x) + "\n"));
     }
-    k(store);
+  }
+
+  function vizPrint(store, k, a, x){
+    jsVizPrint(x);
+    return k(store);
   }
 
   return {
