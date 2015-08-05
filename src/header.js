@@ -18,11 +18,21 @@ module.exports = function(env){
     return chart;
   }
 
+  var make_x_scale = function(chart, width, height, type, params) {
+    // make scale
+    if (type == "linear") {
+      var x = d3.scale.linear()
+        .range([0, width])
+        .domain([ params.lowest, params.highest ]);
+    } else if (type == "ordinal") {
+      var x = d3.scale.ordinal()
+        .domain(params.values)
+        .rangeBands([0, width], 0.1);
+    } else {
+      console.log("error 88: not a valid type: " + type);
+    }
 
-  var make_x_scale = function(chart, width, height, lowest, highest, label) {
-    var x = d3.scale.linear()
-      .range([0, width])
-      .domain([ lowest, highest ]);
+    // draw scale
     var x_axis = d3.svg.axis()
       .scale(x)
       .orient("bottom");
@@ -34,14 +44,22 @@ module.exports = function(env){
       .attr("x", width/2)
       .attr("dy", "3em")
       .style("text-anchor", "end")
-      .text(label);
+      .text(params.label);
     return x;
   }
 
-  var make_y_scale = function(chart, width, height, lowest, highest, label) {
-    var y = d3.scale.linear()
-      .range([height, 0])
-      .domain([lowest, highest]);
+  var make_y_scale = function(chart, width, height, type, params) {
+    if (type == "linear") {
+      var y = d3.scale.linear()
+        .range([height, 0])
+        .domain([params.lowest, params.highest]);
+    } else if (type == "ordinal") {
+      var y = d3.scale.ordinal()
+        .domain(params.values)
+        .rangeBands([height, 0], 0.1);
+    } else {
+      console.log("error 93: not a valid type: " + type);
+    }
     var yAxis = d3.svg.axis()
       .scale(y)
       .orient("left");
@@ -54,7 +72,7 @@ module.exports = function(env){
       .attr("x", -height/2)
       .attr("dy", "-4em")
       .style("text-anchor", "end")
-      .text(label);
+      .text(params.abel);
     return y;
   }
 
@@ -139,8 +157,8 @@ module.exports = function(env){
       })
     }
 
-    var x = make_x_scale(chart, width, height, lowest, highest, category);
-    var y = make_y_scale(chart, width, height, 0, highest_probability, "");
+    var x = make_x_scale(chart, width, height, "linear", {"lowest": lowest, "highest": highest, "category": category});
+    var y = make_y_scale(chart, width, height, "linear", {"lowest": 0, "highest": highest_probability, "category": ""});
 
     // make histogram bars
     chart.selectAll(".bar")
@@ -173,61 +191,28 @@ module.exports = function(env){
     var chart = make_chart(container_selector, margin, width, height);
 
     // cat1 is on X axis
-    var cat1_scale = d3.scale.ordinal()
-        .domain(cat1_values)
-        .rangeBands([0, width], 0.1);
-    var cat1_Axis = d3.svg.axis()
-      .scale(cat1_scale)
-      .orient("bottom");
-    var x_axis_drawn = chart.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(cat1_Axis);
-    x_axis_drawn.append("text")
-      .attr("x", width/2)
-      .attr("dy", "3em")
-      .style("text-anchor", "end")
-      .text(category1);
+    var cat1 = make_x_scale(chart, width, height, "ordinal", {"values": cat1_values, "label": category1});
 
     // cat2 is on Y axis
-    var cat2_scale = d3.scale.ordinal()
-        .domain(cat2_values)
-        .rangeBands([height, 0], 0.1);
-    var cat2_Axis = d3.svg.axis()
-      .scale(cat2_scale)
-      .orient("left");
-    var y_axis_drawn = chart.append("g")
-      .attr("class", "y axis")
-      .call(cat2_Axis);
-    y_axis_drawn.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("x", -height/2)
-      .attr("dy", "-4em")
-      .style("text-anchor", "end")
-      .text(category2);
+    var cat2 = make_y_scale(chart, width, height, "ordinal", {"values": cat2_values, "label": category2});
 
     var minprob = d3.min(probabilities);
     var maxprob = d3.max(probabilities);
     // console.log(probabilities);
     // console.log(_.map(data, function(datum) {return datum.probability;}));
     // console.log(maxprob);
-    if (minprob == maxprob) {
-      var color_scale = function(prob) {return "steelblue"};
-    } else {
-      var color_scale = d3.scale.linear()
-        .domain([0, maxprob])
-        .range(["white", "steelblue"]);
-    }
+    var color_scale = d3.scale.linear()
+      .domain([0, maxprob])
+      .range(["white", "steelblue"]);
 
     chart.selectAll(".tile")
       .data(data)
       .enter().append("rect")
       .attr("class", "tile")
-      .attr("x", function(d) { return cat1_scale(d[category1]); })
-      .attr("width", function(d) { return cat1_scale.rangeBand(); })
-      .attr("y", function(d) { return cat2_scale(d[category2]); })
-      .attr("height", function(d) { return cat2_scale.rangeBand(); })
+      .attr("x", function(d) { return cat1(d[category1]); })
+      .attr("width", function(d) { return cat1.rangeBand(); })
+      .attr("y", function(d) { return cat2(d[category2]); })
+      .attr("height", function(d) { return cat2.rangeBand(); })
       .style("fill", function(d) { return color_scale(d.probability); });
   }
 
@@ -247,12 +232,12 @@ module.exports = function(env){
     // var cat1_values = data.map(function(x) {return x[category1];});
     var cat1_lowest = d3.min(cat1_values);
     var cat1_highest = d3.max(cat1_values);
-    var cat1_scale = make_x_scale(chart, width, height, cat1_lowest, cat1_highest, category1);
+    var cat1_scale = make_x_scale(chart, width, height, "linear", {"lowest": cat1_lowest, "highest": cat1_highest, "label": category1});
 
     // var cat2_values = data.map(function(x) {return x[category2];});
     var cat2_lowest = d3.min(cat2_values);
     var cat2_highest = d3.max(cat2_values);
-    var cat2_scale = make_y_scale(chart, width, height, cat2_lowest, cat2_highest, category2);
+    var cat2_scale = make_y_scale(chart, width, height, "linear", {"lowest": cat2_lowest, "highest": cat2_highest, "category": category2});
 
     var probability_scale_factor = 1/d3.min(probabilities);
 
@@ -307,25 +292,8 @@ module.exports = function(env){
     // var x = make_x_scale(chart, width, height, 0, highest_probability, "");
     // I kinda want everything to be on the same scale always, so that plots can be compared more easily.
     // this should be an option, but for now, let's do this.
-    var x = make_x_scale(chart, width, height, 0, 1, "");
-
-    var y = d3.scale.ordinal()
-        .domain(values)
-        .rangeBands([height, 0], 0.1);
-    var yAxis = d3.svg.axis()
-      .scale(y)
-      .orient("left");
-    var y_axis_drawn = chart.append("g")
-      .attr("class", "y axis")
-      .call(yAxis);
-    y_axis_drawn.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("x", -height/2)
-      .attr("dy", "-4em")
-      .style("text-anchor", "end")
-      .text(category);
-
+    var x = make_x_scale(chart, width, height, "linear", {"lowest": 0, "highest": 1, "label": ""});
+    var y = make_y_scale(chart, width, height, "ordinal", {"values": values, "label": category});
 
     // bar.append("rect")
     //     .attr("width", function(d) { return x(d.value); })
