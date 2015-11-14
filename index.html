@@ -19,7 +19,7 @@
     <script src="http://dippl.org/node_modules/codemirror/mode/javascript/javascript.js"></script>
     <script src="http://dippl.org/assets/js/cm-folding.js"></script>
     <script src="http://dippl.org/assets/js/cm-comments.js"></script>
-    <script src="webppl.min.js"></script> 
+    <script src="webppl.min.js"></script>
     <script src="http://dippl.org/bower_components/paper/dist/paper-full.js"></script>
     <script src="http://dippl.org/bower_components/jquery-autosize/jquery.autosize.min.js"></script>
     <script src="http://dippl.org/bower_components/d3/d3.min.js"></script>
@@ -41,14 +41,14 @@
 
 <h1>Examples</h1>
 
-<pre><code>var continous_erp_3d = ParticleFilter(function() {
+<pre><code>var continuous_erp_3d = ParticleFilter(function() {
   return {
     X: beta(1, 1),
     Y: beta(10, 10),
     Z: beta(.1, .1)
   }
 }, 1000);
-vizPrint(continous_erp_3d);
+vizPrint(continuous_erp_3d);
 </code></pre>
 
 <pre><code>var discrete_erp_3d = Enumerate(function() {
@@ -70,13 +70,13 @@ vizPrint(discrete_erp_3d);
 vizPrint(discrete_erp_2d);
 </code></pre>
 
-<pre><code>var continous_erp_2d = ParticleFilter(function() {
+<pre><code>var continuous_erp_2d = ParticleFilter(function() {
   return {
     X: gaussian(0, 1),
     Y: gaussian(0, 1)
   }
 }, 1000);
-vizPrint(continous_erp_2d);
+vizPrint(continuous_erp_2d);
 </code></pre>
 
 <pre><code>var continuous_erp = ParticleFilter(function() { return gaussian(0, 1); }, 1000);
