@@ -1,5 +1,8 @@
 'use strict';
 
+var insertCss = require('insert-css');
+var fs = require('fs');
+
 module.exports = function(env){
 
   // overall chart properties, for fitting plot within container
@@ -498,7 +501,13 @@ module.exports = function(env){
     }
   }
 
+  var cssInjected = false;
+
   function vizPrint(store, k, a, x){
+    if (!cssInjected) {
+      insertCss(fs.readFileSync(__dirname + '/../viz.css'))
+      cssInjected = true;
+    }
     jsVizPrint(x);
     return k(store);
   }
