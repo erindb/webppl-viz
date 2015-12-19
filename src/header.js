@@ -327,7 +327,9 @@ module.exports = function(env){
     return true;
   }
 
-  function isNiceObject(arr) {
+  // a data frame is an array of objects where
+  // all objects have the same keys
+  function isDataFrame(arr) {
     var first_keys = _.keys(arr[0]);
     if (first_keys.length > 0) {
       //check if same keys all the way through
@@ -345,6 +347,7 @@ module.exports = function(env){
     }
   }
 
+  // are all the items in the support numbers?
   function isNumericErpObject(x) {
     var keys = Object.keys(x);
     for (var i=0; i<keys.length; i++) {
@@ -410,6 +413,7 @@ module.exports = function(env){
     }
   }
 
+  // shows all 1d marginals and pairwise plots
   function plotMarginals(labels, counts, resultDivSelector) {
     var categories = Object.keys(labels[0]);
 
@@ -466,11 +470,14 @@ module.exports = function(env){
       var resultDivSelector = "#" + resultDiv.attr('id');
 
       // // what kind of plot should I show?
-      if (isNiceObject(labels)) {
-        // console.log("isNiceObject");
+      if (isDataFrame(labels)) {
+        // console.log("isDataFrame");
         plotMarginals(labels, counts, resultDivSelector);
       } else {
-        // console.log("is not NiceObject");
+        // if not a dataframe, (currently) assume that support is just a single variable
+        // (rather than, say, a ragged structure like [{x: 1},{x:1, y:2}, ...])
+
+        // console.log("is not DataFrame");
         var result_div = d3.select(resultDivSelector);
         var plotid = "plot" + resultDiv.children().length;
         var plot_div = result_div.append("svg")
@@ -478,6 +485,7 @@ module.exports = function(env){
         plotSingleVariable(labels, counts, resultDivSelector + " #" + plotid, graph_width, graph_height, "");
       }
     } else if (isNumericErpObject(x)) {
+      // Q: do we ever actually enter this branch? my understanding is that numericErpObject are special types of erpWithSupports
       var keys = Object.keys(x);
       for (var i=0; i<keys.length; i++) {
         var key = keys[i];
