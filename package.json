@@ -2,7 +2,7 @@
   "name": "webppl-viz",
   "version": "0.0.1",
   "description": "WebPPL library for visualizing ERPs",
-  "main": "src/header.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,16 +15,9 @@
   "bugs": {
     "url": "https://github.com/erindb/webppl-viz/issues"
   },
-  "webppl": {
-    "headers": [
-      "src/header.js"
-    ],
-    "wppl": [
-      "src/viz.wppl"
-    ]
-  },
   "homepage": "https://github.com/erindb/webppl-viz",
   "dependencies": {
+    "browserify": "^13.0.0",
     "insert-css": "^0.2.0"
   }
 }
