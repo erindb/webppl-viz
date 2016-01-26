@@ -513,7 +513,7 @@ module.exports = function(env){
 
   function vizPrint(store, k, a, x){
     if (!cssInjected) {
-      insertCss(fs.readFileSync(__dirname + '/../viz.css'))
+      insertCss(fs.readFileSync(__dirname + '/../demo/viz.css'))
       cssInjected = true;
     }
     jsVizPrint(x);
