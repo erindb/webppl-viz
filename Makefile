@@ -1,5 +1,5 @@
 demo/webppl-viz.js : src/index.js
-	@browserify "$<" > "$@"
+	@browserify -t brfs "$<" > "$@"
 
 watch :
-	@watchify src/index.js -o demo/webppl-viz.js -v
+	@watchify src/index.js -o demo/webppl-viz.js -v -t brfs
