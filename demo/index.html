@@ -33,12 +33,12 @@
 
 <pre><code>var continuous_erp_3d = ParticleFilter(function() {
   return {
-    X: beta(1, 1),
-    Y: beta(10, 10),
-    Z: beta(.1, .1)
+    X: gaussian(0,1),
+    Y: gaussian(0,1),
+    Z: gaussian(0,1)
   }
 }, 1000);
-vizPrint(continuous_erp_3d);
+viz.print(continuous_erp_3d);
 </code></pre>
 
 <pre><code>var discrete_erp_3d = Enumerate(function() {
@@ -48,7 +48,7 @@ vizPrint(continuous_erp_3d);
     with_what: categorical([1, 1, 1, 1, 1], ["dining", "kitchen", "hall", "conservatory", "library"])
   }
 });
-vizPrint(discrete_erp_3d);
+viz.print(discrete_erp_3d);
 </code></pre>
 
 <pre><code>var discrete_erp_2d = Enumerate(function() {
@@ -57,7 +57,7 @@ vizPrint(discrete_erp_3d);
     boolean: flip(0.7)
   }
 });
-vizPrint(discrete_erp_2d);
+viz.print(discrete_erp_2d);
 </code></pre>
 
 <pre><code>var continuous_erp_2d = ParticleFilter(function() {
@@ -66,15 +66,15 @@ vizPrint(discrete_erp_2d);
     Y: gaussian(0, 1)
   }
 }, 1000);
-vizPrint(continuous_erp_2d);
+viz.print(continuous_erp_2d);
 </code></pre>
 
 <pre><code>var continuous_erp = ParticleFilter(function() { return gaussian(0, 1); }, 1000);
-vizPrint(continuous_erp);
+viz.print(continuous_erp);
 </code></pre>
 
 <pre><code>var discrete_erp = Enumerate(function() { return flip(0.9) ? "apple" : "orange"; });
-vizPrint(discrete_erp);
+viz.print(discrete_erp);
 </code></pre>
 
 </body>
